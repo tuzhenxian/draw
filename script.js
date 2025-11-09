@@ -123,10 +123,7 @@ async function resetDraw() {
             console.log(`请求URL: ${endpoint}`);
             
             const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                method: 'GET'
             });
             
             console.log(`响应状态: ${response.status}`);
@@ -212,46 +209,164 @@ function setupEventListeners() {
 }
 
 // 开始抽签动画
-function startDrawingAnimation() {
-    drawingModal.style.display = 'flex';
-    
-    // 模拟抽签动画效果
-    let iterations = 0;
-    const maxIterations = 20;
-    const interval = setInterval(() => {
-        iterations++;
+async function startDrawingAnimation() {
+    try {
+        console.log('开始抽签动画...');
+        drawingModal.style.display = 'flex';
         
-        // 随机显示一些序号和题目
-        const randomSeq = Math.floor(Math.random() * 13) + 1;
-        const randomTopic = topics[Math.floor(Math.random() * topics.length)].name;
+        // 模拟抽签动画效果
+        let iterations = 0;
+        const maxIterations = 20;
+        const interval = setInterval(() => {
+            iterations++;
+            
+            // 随机显示一些序号和题目
+            const randomSeq = Math.floor(Math.random() * 13) + 1;
+            const randomTopic = topics[Math.floor(Math.random() * topics.length)].name;
+            
+            drawingSeq.textContent = randomSeq;
+            drawingTopic.textContent = randomTopic;
+            
+            // 动画结束，执行实际抽签
+            if (iterations >= maxIterations) {
+                clearInterval(interval);
+                setTimeout(async () => {
+                    // 执行实际抽签并获取结果
+                    const result = await performDraw();
+                    
+                    // 如果有抽签结果，直接在卡片上显示
+                        if (result && result.success) {
+                            console.log('在抽签卡片上显示最终结果');
+                            
+                            // 获取模态框内容元素
+                            const modalContent = drawingModal.querySelector('.modal-content');
+                            
+                            // 更新模态框标题
+                            const modalTitle = modalContent.querySelector('h3');
+                            modalTitle.textContent = '抽签结果';
+                            modalTitle.style.color = '#293241';
+                            modalTitle.style.fontSize = '24px';
+                            
+                            // 更新动画区域样式
+                            const drawingAnimation = modalContent.querySelector('.drawing-animation');
+                            drawingAnimation.style.textAlign = 'center';
+                            drawingAnimation.style.padding = '20px';
+                            drawingAnimation.style.backgroundColor = '#f7f7f7';
+                            drawingAnimation.style.borderRadius = '8px';
+                            drawingAnimation.style.margin = '20px 0';
+                            
+                            // 更新结果文本和样式
+                            const seqLabel = drawingSeq.parentNode;
+                            const topicLabel = drawingTopic.parentNode;
+                            
+                            seqLabel.style.display = 'block';
+                            seqLabel.style.margin = '10px 0';
+                            seqLabel.style.fontSize = '18px';
+                            seqLabel.style.color = '#293241';
+                            
+                            topicLabel.style.display = 'block';
+                            topicLabel.style.margin = '10px 0';
+                            topicLabel.style.fontSize = '18px';
+                            topicLabel.style.color = '#293241';
+                            
+                            // 设置结果值
+                            drawingSeq.textContent = result.user.seqNo;
+                            drawingTopic.textContent = result.user.topic;
+                            
+                            // 更新结果值样式，使其更醒目
+                            drawingSeq.style.fontSize = '28px';
+                            drawingSeq.style.fontWeight = 'bold';
+                            drawingSeq.style.color = '#ff6b35';
+                            drawingSeq.style.marginLeft = '10px';
+                            
+                            drawingTopic.style.fontSize = '22px';
+                            drawingTopic.style.fontWeight = 'bold';
+                            drawingTopic.style.color = '#457b9d';
+                            drawingTopic.style.marginLeft = '10px';
+                            drawingTopic.style.wordWrap = 'break-word';
+                            drawingTopic.style.maxWidth = '90%';
+                            
+                            // 添加结果确认按钮
+                            
+                            // 移除已有的确认按钮（如果有）
+                            const existingConfirmBtn = modalContent.querySelector('#result-confirm-btn');
+                            if (existingConfirmBtn) {
+                                existingConfirmBtn.remove();
+                            }
+                            
+                            // 创建确认按钮
+                            const confirmBtn = document.createElement('button');
+                            confirmBtn.id = 'result-confirm-btn';
+                            confirmBtn.textContent = '确认结果';
+                            confirmBtn.style.cssText = `
+                                margin-top: 20px;
+                                padding: 12px 30px;
+                                background-color: #4ecdc4;
+                                color: white;
+                                border: none;
+                                border-radius: 6px;
+                                font-size: 18px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                outline: none;
+                            `;
+                            
+                            // 添加悬停效果
+                            confirmBtn.addEventListener('mouseover', () => {
+                                confirmBtn.style.backgroundColor = '#45b7aa';
+                                confirmBtn.style.transform = 'scale(1.05)';
+                            });
+                            
+                            confirmBtn.addEventListener('mouseout', () => {
+                                confirmBtn.style.backgroundColor = '#4ecdc4';
+                                confirmBtn.style.transform = 'scale(1)';
+                            });
+                            
+                            // 添加点击事件
+                            confirmBtn.addEventListener('click', () => {
+                                drawingModal.style.display = 'none';
+                                // 重置所有样式
+                                modalTitle.textContent = '抽签中...';
+                                modalTitle.style.cssText = '';
+                                drawingAnimation.style.cssText = '';
+                                seqLabel.style.cssText = '';
+                                topicLabel.style.cssText = '';
+                                drawingSeq.style.cssText = '';
+                                drawingTopic.style.cssText = '';
+                            });
+                            
+                            // 添加按钮到模态框底部中央
+                            confirmBtn.style.display = 'block';
+                            confirmBtn.style.marginLeft = 'auto';
+                            confirmBtn.style.marginRight = 'auto';
+                            modalContent.appendChild(confirmBtn);
+                    } else {
+                        // 如果没有成功结果，隐藏弹窗
+                        drawingModal.style.display = 'none';
+                    }
+                }, 300);
+            }
+        }, 100);
+    } catch (error) {
+        console.error('抽签动画失败:', error.message);
+        console.error('错误详情:', error);
+        alert('抽签过程中发生错误，请重试。');
         
-        drawingSeq.textContent = randomSeq;
-        drawingTopic.textContent = randomTopic;
-        
-        // 动画结束，执行实际抽签
-        if (iterations >= maxIterations) {
-            clearInterval(interval);
-            setTimeout(async () => {
-                await performDraw();
-                drawingModal.style.display = 'none';
-            }, 300);
-        }
-    }, 100);
+        // 隐藏抽签动画弹窗
+        drawingModal.style.display = 'none';
+    }
 }
 
 // 执行抽签逻辑
 async function performDraw() {
     try {
         console.log('执行抽签逻辑...');
-        const endpoint = `${API_BASE_URL}/api/draw`;
+        const endpoint = `${API_BASE_URL}/api/draw?username=${encodeURIComponent(currentUserName)}`;
         console.log(`请求URL: ${endpoint}`);
         
         const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username: currentUserName })
+            method: 'GET'
         });
         
         console.log(`响应状态: ${response.status}`);
@@ -269,27 +384,20 @@ async function performDraw() {
             // 重新加载数据
             await loadDataFromServer();
             
-            // 显示抽签结果提示
-            const message = result.message.includes('已抽过题') ? 
-                `${currentUserName}，您已经抽过题了！\n序号: ${result.user.seqNo}\n题目: ${result.user.topic}` : 
-                `${currentUserName}，您的抽签结果：\n序号: ${result.user.seqNo}\n题目: ${result.user.topic}`;
-            
-            alert(message);
-            
-            // 隐藏抽题区
-            const drawSection = document.querySelector('.draw-section');
-            if (drawSection) {
-                drawSection.style.display = 'none';
-                console.log('抽题区已隐藏');
-            }
+            console.log('准备在抽签卡片上显示结果');
+            // 返回结果，让startDrawingAnimation函数可以使用
+            return result;
         } else {
             console.error('抽签失败响应:', result.message);
             alert('抽签失败: ' + result.message);
+            return result; // 返回结果，即使失败
         }
     } catch (error) {
         console.error('抽签操作失败:', error.message);
         console.error('错误详情:', error);
         alert('抽签失败，请重试。错误: ' + error.message);
+        // 返回错误结果
+        return { success: false, error: error.message };
     }
 }
 

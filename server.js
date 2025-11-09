@@ -103,8 +103,8 @@ app.get('/api/sequence', (req, res) => {
 });
 
 // API: 执行抽签
-app.post('/api/draw', (req, res) => {
-    const { username } = req.body;
+app.get('/api/draw', (req, res) => {
+    const { username } = req.query;
     
     if (!username || username.trim() === '') {
         return res.status(400).json({ success: false, message: '用户名不能为空' });
@@ -175,8 +175,8 @@ app.post('/api/draw', (req, res) => {
     }
 });
 
-// API: 重置抽签结果（POST，用于前端调用）
-app.post('/api/reset', (req, res) => {
+// API: 重置抽签结果（GET，用于前端调用）
+app.get('/api/reset', (req, res) => {
     try {
         // 重置sequence数据
         sequence = JSON.parse(JSON.stringify(config.sequence)); // 重新从配置深拷贝
@@ -245,7 +245,7 @@ app.listen(PORT, () => {
     console.log(`服务器运行在 http://localhost:${PORT}`);
     console.log('API端点:');
     console.log('  GET  /api/sequence - 获取抽签序列');
-    console.log('  POST /api/draw - 执行抽签');
-    console.log('  POST /api/reset - 重置抽签结果');
+console.log('  GET  /api/draw - 执行抽签');
+console.log('  GET  /api/reset - 重置抽签结果');
     console.log('  GET  /reset - 重置并重定向到首页');
 });
