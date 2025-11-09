@@ -16,7 +16,7 @@ app.use(express.json());
 function loadConfig() {
     // 直接定义配置数据，避免解析问题
     const config = {
-        admin: "小黄",
+        admin: "黄立荧",
         topics: [
             {
         "id": 1,
