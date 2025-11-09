@@ -6,8 +6,16 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 启用CORS
-app.use(cors());
+// 启用CORS，配置更灵活的选项以允许所有来源
+app.use(cors({
+    origin: '*', // 允许所有来源
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
+// 处理预检请求
+app.options('*', cors());
 
 // 解析JSON请求体
 app.use(express.json());
@@ -169,7 +177,7 @@ app.post('/api/draw', (req, res) => {
     }
 });
 
-// API: 重置抽签结果
+// API: 重置抽签结果（POST，用于前端调用）
 app.post('/api/reset', (req, res) => {
     try {
         // 重置sequence数据
@@ -186,6 +194,20 @@ app.post('/api/reset', (req, res) => {
             message: '重置失败',
             error: error.message
         });
+    }
+});
+
+// API: 重置抽签结果（GET，用于直接访问）
+app.get('/reset', (req, res) => {
+    try {
+        // 重置sequence数据
+        sequence = JSON.parse(JSON.stringify(config.sequence)); // 重新从配置深拷贝
+        drawnTopics = [];
+        
+        // 重定向到首页
+        res.redirect('/');
+    } catch (error) {
+        res.status(500).send('重置失败，请稍后重试');
     }
 });
 
