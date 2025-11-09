@@ -27,25 +27,43 @@ function init() {
 // 从服务器加载数据
 async function loadDataFromServer() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/sequence`);
+        console.log('尝试从服务器加载数据...');
+        const endpoint = `${API_BASE_URL}/api/sequence`;
+        console.log(`请求URL: ${endpoint}`);
+        
+        const response = await fetch(endpoint);
+        console.log(`响应状态: ${response.status}`);
+        
+        // 检查响应是否成功
+        if (!response.ok) {
+            console.error(`HTTP错误: ${response.status} ${response.statusText}`);
+            throw new Error(`服务器返回错误状态: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('成功获取数据:', data);
         
         // 更新全局数据
-        sequence.forEach(item => {
-            const serverItem = data.sequence.find(s => s.seqNo === item.seqNo);
-            if (serverItem) {
-                item.name = serverItem.name;
-                item.topic = serverItem.topic;
-            }
-        });
+        if (data.sequence && Array.isArray(data.sequence)) {
+            sequence.forEach(item => {
+                const serverItem = data.sequence.find(s => s.seqNo === item.seqNo);
+                if (serverItem) {
+                    item.name = serverItem.name;
+                    item.topic = serverItem.topic;
+                }
+            });
+        }
         
         drawnTopics = data.drawnTopics || [];
         
         // 更新界面
         renderResultsList();
+        return true;
     } catch (error) {
-        console.error('从服务器加载数据失败:', error);
-        alert('加载数据失败，请刷新页面重试');
+        console.error('从服务器加载数据失败:', error.message);
+        console.error('错误详情:', error);
+        alert('加载数据失败，请刷新页面重试。错误: ' + error.message);
+        return false;
     }
 }
 
@@ -54,24 +72,40 @@ async function resetDraw() {
     // 确认重置操作
     if (confirm('确定要重置所有抽签结果吗？此操作不可撤销。')) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/reset`, {
+            console.log('执行重置抽签...');
+            const endpoint = `${API_BASE_URL}/api/reset`;
+            console.log(`请求URL: ${endpoint}`);
+            
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
             
+            console.log(`响应状态: ${response.status}`);
+            
+            // 检查响应是否成功
+            if (!response.ok) {
+                console.error(`HTTP错误: ${response.status} ${response.statusText}`);
+                throw new Error(`服务器返回错误状态: ${response.status}`);
+            }
+            
             const result = await response.json();
+            console.log('重置结果:', result);
+            
             if (result.success) {
                 // 重新加载数据
                 await loadDataFromServer();
                 alert(result.message);
             } else {
+                console.error('重置失败响应:', result.message);
                 alert('重置失败: ' + result.message);
             }
         } catch (error) {
-            console.error('重置操作失败:', error);
-            alert('重置失败，请重试');
+            console.error('重置操作失败:', error.message);
+            console.error('错误详情:', error);
+            alert('重置失败，请重试。错误: ' + error.message);
         }
     }
 }
@@ -162,7 +196,11 @@ function startDrawingAnimation() {
 // 执行抽签逻辑
 async function performDraw() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/draw`, {
+        console.log('执行抽签逻辑...');
+        const endpoint = `${API_BASE_URL}/api/draw`;
+        console.log(`请求URL: ${endpoint}`);
+        
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -170,7 +208,16 @@ async function performDraw() {
             body: JSON.stringify({ username: currentUserName })
         });
         
+        console.log(`响应状态: ${response.status}`);
+        
+        // 检查响应是否成功
+        if (!response.ok) {
+            console.error(`HTTP错误: ${response.status} ${response.statusText}`);
+            throw new Error(`服务器返回错误状态: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log('抽签结果:', result);
         
         if (result.success) {
             // 重新加载数据
@@ -183,11 +230,13 @@ async function performDraw() {
             
             alert(message);
         } else {
+            console.error('抽签失败响应:', result.message);
             alert('抽签失败: ' + result.message);
         }
     } catch (error) {
-        console.error('抽签操作失败:', error);
-        alert('抽签失败，请重试');
+        console.error('抽签操作失败:', error.message);
+        console.error('错误详情:', error);
+        alert('抽签失败，请重试。错误: ' + error.message);
     }
 }
 
