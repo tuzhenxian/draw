@@ -1,0 +1,60 @@
+var topics = [
+    {
+        "id": 1,
+        "name": "一、针对青少年群体（如职业技术院校在校学生），开展未列管易成瘾物质防范技能宣讲"
+    },
+    {
+        "id": 2,
+        "name": "二、在某开发性文化集市中（如农村大集市场景），面向社会大众开展禁毒拒毒宣讲，强识毒、拒毒、防毒能力，推动禁毒社会化服务"
+    },
+    {
+        "id": 3,
+        "name": "三、针对社区居民（重点是青少年家长群体），开展新精神活性物质滥用防范宣讲"
+    },
+    {
+        "id": 4,
+        "name": "四、针对企业、事业群体（如易制毒企业协会成员单位），开展禁毒法治宣讲，净化企事业生产经营环境，打造\"无毒企业"
+    },
+    {
+        "id": 5,
+        "name": "五、针对社区矫正对象群体，结合当前禁毒形势开展一堂禁毒法治教育课"
+    },
+    {
+        "id": 6,
+        "name": "六、针对初中年龄段学生群体，自设情景，自设形式开展禁毒法治宣讲"
+    },
+    {
+        "id": 7,
+        "name": "七、针对农村留守人员，自设情景，自设形式开展禁毒法治宣讲"
+    }
+];
+var admin = "小黄";
+var sequence = [
+    {
+        "seqNo":1,"name":null,"topic":null
+    },{
+        "seqNo":2,"name":null,"topic":null
+    },{
+        "seqNo":3,"name":null,"topic":null
+    },{
+        "seqNo":4,"name":null,"topic":null
+    },{
+        "seqNo":5,"name":null,"topic":null
+    },{
+        "seqNo":6,"name":null,"topic":null
+    },{
+        "seqNo":7,"name":null,"topic":null
+    },{
+        "seqNo":8,"name":null,"topic":null
+    },{
+        "seqNo":9,"name":null,"topic":null
+    },{
+        "seqNo":10,"name":null,"topic":null
+    },{
+        "seqNo":11,"name":null,"topic":null
+    },{
+        "seqNo":12,"name":null,"topic":null
+    },{
+        "seqNo":13,"name":null,"topic":null
+    }
+]

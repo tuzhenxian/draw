@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽题目小工具</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>抽题目小工具</h1>
+        </header>
+        
+        <main>
+            <section class="draw-section">
+                <h2>抽题区</h2>
+                <div class="draw-controls">
+                    <button id="draw-btn" class="draw-button">开始抽签</button>
+                    <button id="reset-btn" class="reset-button">重置抽签</button>
+                </div>
+            </section>
+            
+            <section class="topics-section">
+                <h2>题目列表</h2>
+                <div class="topics-list" id="topics-list">
+                    <!-- 题目列表将通过JavaScript动态生成 -->
+                </div>
+            </section>
+            
+            <section class="results-section">
+                <h2>抽签结果</h2>
+                <div class="results-list" id="results-list">
+                    <!-- 抽签结果将通过JavaScript动态生成 -->
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- 姓名输入弹窗 -->
+    <div id="name-modal" class="modal">
+        <div class="modal-content">
+            <h3>请输入您的姓名</h3>
+            <input type="text" id="name-input" placeholder="请输入姓名">
+            <div class="modal-buttons">
+                <button id="cancel-btn">取消</button>
+                <button id="confirm-btn" disabled>确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 抽签动画弹窗 -->
+    <div id="drawing-modal" class="modal">
+        <div class="modal-content">
+            <h3>抽签中...</h3>
+            <div class="drawing-animation">
+                <div class="drawing-seq">抽取序号: <span id="drawing-seq">--</span></div>
+                <div class="drawing-topic">抽取题目: <span id="drawing-topic">--</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
