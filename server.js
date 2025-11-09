@@ -211,10 +211,45 @@ app.get('/reset', (req, res) => {
     }
 });
 
-// 提供静态文件服务
-app.use(express.static(__dirname));
+// 提供静态文件服务，使用绝对路径
+const staticPath = path.resolve(__dirname);
+console.log(`静态文件路径: ${staticPath}`);
+app.use(express.static(staticPath));
+
+// 添加API路径前缀检查，确保API请求不会返回HTML
+app.use('/api/*', (req, res, next) => {
+    // 确保所有API路径都有正确的处理
+    if (!req.path.includes('/api/')) {
+        return res.status(404).json({ error: 'API路径不存在' });
+    }
+    next();
+});
+
+// 兜底路由处理：对于未匹配的API路径，返回404错误而不是HTML
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+        error: 'API端点不存在',
+        path: req.path,
+        message: '请检查API路径是否正确'
+    });
+});
+
+// 对于非API路径，尝试提供index.html（支持SPA路由）
+app.get('*', (req, res) => {
+    const indexPath = path.join(staticPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('文件不存在');
+    }
+});
 
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`服务器运行在 http://localhost:${PORT}`);
+    console.log('API端点:');
+    console.log('  GET  /api/sequence - 获取抽签序列');
+    console.log('  POST /api/draw - 执行抽签');
+    console.log('  POST /api/reset - 重置抽签结果');
+    console.log('  GET  /reset - 重置并重定向到首页');
 });

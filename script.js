@@ -37,7 +37,30 @@ async function loadDataFromServer() {
         // 检查响应是否成功
         if (!response.ok) {
             console.error(`HTTP错误: ${response.status} ${response.statusText}`);
-            throw new Error(`服务器返回错误状态: ${response.status}`);
+            
+            // 尝试获取错误响应内容
+            let errorBody;
+            try {
+                // 尝试以JSON格式解析
+                errorBody = await response.json();
+                throw new Error(`服务器返回错误: ${errorBody.error || errorBody.message || response.statusText}`);
+            } catch (jsonError) {
+                // 如果不是JSON，获取文本内容预览
+                const textContent = await response.text();
+                const preview = textContent.substring(0, 100) + (textContent.length > 100 ? '...' : '');
+                throw new Error(`服务器返回错误状态: ${response.status}，内容: ${preview}`);
+            }
+        }
+        
+        // 安全处理JSON解析
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            // 如果不是JSON响应，获取内容并提示
+            const nonJsonContent = await response.text();
+            const preview = nonJsonContent.substring(0, 100) + (nonJsonContent.length > 100 ? '...' : '');
+            console.error('期望JSON响应，但收到其他类型:', contentType);
+            console.error('响应内容预览:', preview);
+            throw new Error(`收到非JSON响应，请检查API地址配置`);
         }
         
         const data = await response.json();
@@ -62,7 +85,13 @@ async function loadDataFromServer() {
     } catch (error) {
         console.error('从服务器加载数据失败:', error.message);
         console.error('错误详情:', error);
-        alert('加载数据失败，请刷新页面重试。错误: ' + error.message);
+        
+        // 针对HTML响应的特殊处理
+        if (error.message.includes('Unexpected token')) {
+            alert('加载数据失败，收到非JSON响应。请检查部署配置和API路径。错误: ' + error.message);
+        } else {
+            alert('加载数据失败，请刷新页面重试。错误: ' + error.message);
+        }
         return false;
     }
 }
