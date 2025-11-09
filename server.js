@@ -96,12 +96,10 @@ function initDrawnTopics() {
 // 初始化
 initDrawnTopics();
 
+
 // API: 获取当前sequence
 app.get('/api/sequence', (req, res) => {
-    res.json({
-        sequence: sequence,
-        drawnTopics: drawnTopics
-    });
+    res.json(sequence); // 直接返回sequence数组，不包装额外对象
 });
 
 // API: 执行抽签
@@ -211,20 +209,6 @@ app.get('/reset', (req, res) => {
     }
 });
 
-// 提供静态文件服务，使用绝对路径
-const staticPath = path.resolve(__dirname);
-console.log(`静态文件路径: ${staticPath}`);
-app.use(express.static(staticPath));
-
-// 添加API路径前缀检查，确保API请求不会返回HTML
-app.use('/api/*', (req, res, next) => {
-    // 确保所有API路径都有正确的处理
-    if (!req.path.includes('/api/')) {
-        return res.status(404).json({ error: 'API路径不存在' });
-    }
-    next();
-});
-
 // 兜底路由处理：对于未匹配的API路径，返回404错误而不是HTML
 app.use('/api/*', (req, res) => {
     res.status(404).json({ 
@@ -234,8 +218,20 @@ app.use('/api/*', (req, res) => {
     });
 });
 
+// 提供静态文件服务，使用绝对路径
+const staticPath = path.resolve(__dirname);
+console.log(`静态文件路径: ${staticPath}`);
+app.use(express.static(staticPath));
+
 // 对于非API路径，尝试提供index.html（支持SPA路由）
 app.get('*', (req, res) => {
+    // 确保不是API请求
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ 
+            error: 'API端点不存在',
+            path: req.path
+        });
+    }
     const indexPath = path.join(staticPath, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);

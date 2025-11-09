@@ -63,21 +63,38 @@ async function loadDataFromServer() {
             throw new Error(`收到非JSON响应，请检查API地址配置`);
         }
         
-        const data = await response.json();
-        console.log('成功获取数据:', data);
+        // 现在服务器直接返回sequence数组
+        const serverSequence = await response.json();
+        console.log('成功获取数据:', serverSequence);
         
-        // 更新全局数据
-        if (data.sequence && Array.isArray(data.sequence)) {
-            sequence.forEach(item => {
-                const serverItem = data.sequence.find(s => s.seqNo === item.seqNo);
-                if (serverItem) {
-                    item.name = serverItem.name;
-                    item.topic = serverItem.topic;
-                }
-            });
+        // 确保返回的数据是数组
+        if (!Array.isArray(serverSequence)) {
+            throw new Error('服务器返回的数据格式错误，期望数组');
         }
         
-        drawnTopics = data.drawnTopics || [];
+        // 更新全局数据
+        // 清空sequence数组，准备更新
+        sequence.length = 0;
+        // 直接使用服务器返回的sequence数据
+        serverSequence.forEach(serverItem => {
+            sequence.push({
+                seqNo: serverItem.seqNo,
+                name: serverItem.name,
+                topic: serverItem.topic
+            });
+        });
+        
+        // 重新计算drawnTopics
+        drawnTopics = [];
+        sequence.forEach(item => {
+            if (item.topic) {
+                // 查找对应的topic ID
+                const topic = topics.find(t => t.name === item.topic);
+                if (topic) {
+                    drawnTopics.push(topic.id);
+                }
+            }
+        });
         
         // 更新界面
         renderResultsList();
@@ -87,8 +104,8 @@ async function loadDataFromServer() {
         console.error('错误详情:', error);
         
         // 针对HTML响应的特殊处理
-        if (error.message.includes('Unexpected token')) {
-            alert('加载数据失败，收到非JSON响应。请检查部署配置和API路径。错误: ' + error.message);
+        if (error.message.includes('Unexpected token') || error.message.includes('<!DOCTYPE')) {
+            alert('加载数据失败，收到HTML而非JSON响应。请检查API路径配置。错误: ' + error.message.substring(0, 150));
         } else {
             alert('加载数据失败，请刷新页面重试。错误: ' + error.message);
         }
@@ -258,6 +275,13 @@ async function performDraw() {
                 `${currentUserName}，您的抽签结果：\n序号: ${result.user.seqNo}\n题目: ${result.user.topic}`;
             
             alert(message);
+            
+            // 隐藏抽题区
+            const drawSection = document.querySelector('.draw-section');
+            if (drawSection) {
+                drawSection.style.display = 'none';
+                console.log('抽题区已隐藏');
+            }
         } else {
             console.error('抽签失败响应:', result.message);
             alert('抽签失败: ' + result.message);
