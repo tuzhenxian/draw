@@ -1,7 +1,19 @@
 // 全局变量存储当前抽取的用户和结果
 let currentUserName = '';
 let drawnTopics = []; // 已抽取的题目ID集合
-const API_BASE_URL = ''; // 服务器API基础URL（当前域名下）
+// 本地存储sequence数据
+let sequence = [];
+// 本地存储topics数据
+const topics = [
+    { id: 1, name: "针对青少年群体（如职业技术院校在校学生），开展未列管易成瘾物质防范技能宣讲" },
+    { id: 2, name: "在某开发性文化集市中（如农村大集市场景），面向社会大众开展禁毒拒毒宣讲，强识毒、拒毒、防毒能力，推动禁毒社会化服务" },
+    { id: 3, name: "针对社区居民（重点是青少年家长群体），开展新精神活性物质滥用防范宣讲" },
+    { id: 4, name: "针对企业、事业群体（如易制毒企业协会成员单位），开展禁毒法治宣讲，净化企事业生产经营环境，打造\"无毒企业\"" },
+    { id: 5, name: "针对社区矫正对象群体，结合当前禁毒形势开展一堂禁毒法治教育课" },
+    { id: 6, name: "针对初中年龄段学生群体，自设情景，自设形式开展禁毒法治宣讲" },
+    { id: 7, name: "针对农村留守人员，自设情景，自设形式开展禁毒法治宣讲" }
+];
+const MAX_SEQUENCE = 13; // 最大序号数
 
 // DOM元素
 const drawBtn = document.getElementById('draw-btn');
@@ -20,69 +32,30 @@ const resultsList = document.getElementById('results-list');
 function init() {
     renderTopicsList();
     setupEventListeners();
-    // 从服务器加载数据
-    loadDataFromServer();
+    // 从本地存储加载数据
+    loadDataFromLocalStorage();
 }
 
-// 从服务器加载数据
-async function loadDataFromServer() {
+// 从本地存储加载数据
+function loadDataFromLocalStorage() {
     try {
-        console.log('尝试从服务器加载数据...');
-        const endpoint = `${API_BASE_URL}/api/sequence`;
-        console.log(`请求URL: ${endpoint}`);
+        console.log('尝试从本地存储加载数据...');
+        const savedSequence = localStorage.getItem('drawSequence');
         
-        const response = await fetch(endpoint);
-        console.log(`响应状态: ${response.status}`);
-        
-        // 检查响应是否成功
-        if (!response.ok) {
-            console.error(`HTTP错误: ${response.status} ${response.statusText}`);
-            
-            // 尝试获取错误响应内容
-            let errorBody;
-            try {
-                // 尝试以JSON格式解析
-                errorBody = await response.json();
-                throw new Error(`服务器返回错误: ${errorBody.error || errorBody.message || response.statusText}`);
-            } catch (jsonError) {
-                // 如果不是JSON，获取文本内容预览
-                const textContent = await response.text();
-                const preview = textContent.substring(0, 100) + (textContent.length > 100 ? '...' : '');
-                throw new Error(`服务器返回错误状态: ${response.status}，内容: ${preview}`);
-            }
+        if (savedSequence) {
+            sequence = JSON.parse(savedSequence);
+            console.log('成功从本地存储加载数据:', sequence);
+        } else {
+            // 初始化空的sequence数组
+            sequence = Array.from({ length: MAX_SEQUENCE }, (_, i) => ({
+                seqNo: i + 1,
+                name: null,
+                topic: null
+            }));
+            console.log('初始化新的sequence数据');
+            // 保存到本地存储
+            saveDataToLocalStorage();
         }
-        
-        // 安全处理JSON解析
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            // 如果不是JSON响应，获取内容并提示
-            const nonJsonContent = await response.text();
-            const preview = nonJsonContent.substring(0, 100) + (nonJsonContent.length > 100 ? '...' : '');
-            console.error('期望JSON响应，但收到其他类型:', contentType);
-            console.error('响应内容预览:', preview);
-            throw new Error(`收到非JSON响应，请检查API地址配置`);
-        }
-        
-        // 现在服务器直接返回sequence数组
-        const serverSequence = await response.json();
-        console.log('成功获取数据:', serverSequence);
-        
-        // 确保返回的数据是数组
-        if (!Array.isArray(serverSequence)) {
-            throw new Error('服务器返回的数据格式错误，期望数组');
-        }
-        
-        // 更新全局数据
-        // 清空sequence数组，准备更新
-        sequence.length = 0;
-        // 直接使用服务器返回的sequence数据
-        serverSequence.forEach(serverItem => {
-            sequence.push({
-                seqNo: serverItem.seqNo,
-                name: serverItem.name,
-                topic: serverItem.topic
-            });
-        });
         
         // 重新计算drawnTopics
         drawnTopics = [];
@@ -100,51 +73,53 @@ async function loadDataFromServer() {
         renderResultsList();
         return true;
     } catch (error) {
-        console.error('从服务器加载数据失败:', error.message);
-        console.error('错误详情:', error);
-        
-        // 针对HTML响应的特殊处理
-        if (error.message.includes('Unexpected token') || error.message.includes('<!DOCTYPE')) {
-            alert('加载数据失败，收到HTML而非JSON响应。请检查API路径配置。错误: ' + error.message.substring(0, 150));
-        } else {
-            alert('加载数据失败，请刷新页面重试。错误: ' + error.message);
-        }
-        return false;
+        console.error('从本地存储加载数据失败:', error.message);
+        // 初始化空的sequence数组
+        sequence = Array.from({ length: MAX_SEQUENCE }, (_, i) => ({
+            seqNo: i + 1,
+            name: null,
+            topic: null
+        }));
+        saveDataToLocalStorage();
+        renderResultsList();
+        return true;
+    }
+}
+
+// 保存数据到本地存储
+function saveDataToLocalStorage() {
+    try {
+        localStorage.setItem('drawSequence', JSON.stringify(sequence));
+        console.log('数据已保存到本地存储');
+    } catch (error) {
+        console.error('保存数据到本地存储失败:', error.message);
     }
 }
 
 // 重置抽签功能
-async function resetDraw() {
+function resetDraw() {
     // 确认重置操作
     if (confirm('确定要重置所有抽签结果吗？此操作不可撤销。')) {
         try {
-            console.log('执行重置抽签...');
-            const endpoint = `${API_BASE_URL}/api/reset`;
-            console.log(`请求URL: ${endpoint}`);
+            console.log('执行本地重置抽签...');
             
-            const response = await fetch(endpoint, {
-                method: 'GET'
-            });
+            // 重置sequence数组
+            sequence = Array.from({ length: MAX_SEQUENCE }, (_, i) => ({
+                seqNo: i + 1,
+                name: null,
+                topic: null
+            }));
             
-            console.log(`响应状态: ${response.status}`);
+            // 重置drawnTopics数组
+            drawnTopics = [];
             
-            // 检查响应是否成功
-            if (!response.ok) {
-                console.error(`HTTP错误: ${response.status} ${response.statusText}`);
-                throw new Error(`服务器返回错误状态: ${response.status}`);
-            }
+            // 保存到本地存储
+            saveDataToLocalStorage();
             
-            const result = await response.json();
-            console.log('重置结果:', result);
+            // 更新界面
+            renderResultsList();
             
-            if (result.success) {
-                // 重新加载数据
-                await loadDataFromServer();
-                alert(result.message);
-            } else {
-                console.error('重置失败响应:', result.message);
-                alert('重置失败: ' + result.message);
-            }
+            alert('重置成功！');
         } catch (error) {
             console.error('重置操作失败:', error.message);
             console.error('错误详情:', error);
@@ -230,9 +205,9 @@ async function startDrawingAnimation() {
             // 动画结束，执行实际抽签
             if (iterations >= maxIterations) {
                 clearInterval(interval);
-                setTimeout(async () => {
+                setTimeout(() => {
                     // 执行实际抽签并获取结果
-                    const result = await performDraw();
+                    const result = performDraw();
                     
                     // 如果有抽签结果，直接在卡片上显示
                         if (result && result.success) {
@@ -359,39 +334,68 @@ async function startDrawingAnimation() {
 }
 
 // 执行抽签逻辑
-async function performDraw() {
+function performDraw() {
     try {
-        console.log('执行抽签逻辑...');
-        const endpoint = `${API_BASE_URL}/api/draw?username=${encodeURIComponent(currentUserName)}`;
-        console.log(`请求URL: ${endpoint}`);
+        console.log('执行本地抽签逻辑...');
         
-        const response = await fetch(endpoint, {
-            method: 'GET'
-        });
-        
-        console.log(`响应状态: ${response.status}`);
-        
-        // 检查响应是否成功
-        if (!response.ok) {
-            console.error(`HTTP错误: ${response.status} ${response.statusText}`);
-            throw new Error(`服务器返回错误状态: ${response.status}`);
+        // 检查是否已存在同名用户
+        const existingUser = sequence.find(item => item.name === currentUserName);
+        if (existingUser) {
+            alert('该用户已参与抽签！');
+            return { success: false, message: '该用户已参与抽签' };
         }
         
-        const result = await response.json();
-        console.log('抽签结果:', result);
+        // 找出未抽签的序号
+        const emptySeqs = sequence.filter(item => item.name === null);
+        if (emptySeqs.length === 0) {
+            alert('所有序号已分配完毕！');
+            return { success: false, message: '所有序号已分配完毕' };
+        }
         
-        if (result.success) {
-            // 重新加载数据
-            await loadDataFromServer();
-            
-            console.log('准备在抽签卡片上显示结果');
-            // 返回结果，让startDrawingAnimation函数可以使用
-            return result;
+        // 随机选择一个未抽签的序号
+        const randomIndex = Math.floor(Math.random() * emptySeqs.length);
+        const selectedSeq = emptySeqs[randomIndex];
+        
+        // 找出未抽取的题目
+        const availableTopics = topics.filter(topic => !drawnTopics.includes(topic.id));
+        let selectedTopic;
+        
+        if (availableTopics.length > 0) {
+            // 如果还有未抽取的题目，随机选择一个
+            const topicIndex = Math.floor(Math.random() * availableTopics.length);
+            selectedTopic = availableTopics[topicIndex];
+            drawnTopics.push(selectedTopic.id);
         } else {
-            console.error('抽签失败响应:', result.message);
-            alert('抽签失败: ' + result.message);
-            return result; // 返回结果，即使失败
+            // 如果所有题目都已抽取，随机选择一个题目
+            const topicIndex = Math.floor(Math.random() * topics.length);
+            selectedTopic = topics[topicIndex];
         }
+        
+        // 更新sequence
+        const seqIndex = sequence.findIndex(item => item.seqNo === selectedSeq.seqNo);
+        sequence[seqIndex] = {
+            seqNo: selectedSeq.seqNo,
+            name: currentUserName,
+            topic: selectedTopic.name
+        };
+        
+        // 保存到本地存储
+        saveDataToLocalStorage();
+        
+        // 更新界面
+        renderResultsList();
+        
+        console.log('抽签成功:', { seqNo: selectedSeq.seqNo, name: currentUserName, topic: selectedTopic.name });
+        
+        // 返回结果
+        return {
+            success: true,
+            user: {
+                seqNo: selectedSeq.seqNo,
+                name: currentUserName,
+                topic: selectedTopic.name
+            }
+        };
     } catch (error) {
         console.error('抽签操作失败:', error.message);
         console.error('错误详情:', error);
@@ -433,8 +437,7 @@ function renderResultsList() {
     });
 }
 
-// 定期刷新数据，确保多用户同步
-setInterval(loadDataFromServer, 5000); // 每5秒刷新一次
+// 不再需要定期刷新数据，因为现在是本地存储
 
 // 页面加载完成后初始化
 window.addEventListener('DOMContentLoaded', init);
